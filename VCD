@@ -1,0 +1,62 @@
+from vosk import Model, KaldiRecognizer
+import pyaudio
+from djitellopy import Tello
+
+
+tello=Tello()
+
+tello.connect()
+
+model = Model(r"C:\Users\Admin\PycharmProjects\VCD\venv\vosk\vosk-model-small-en-us-0.15")
+recognizer = KaldiRecognizer(model, 16000)
+
+mic = pyaudio.PyAudio()
+
+listening = False
+
+
+def get_command():
+    listening = True
+    stream = mic.open(rate=16000,channels=1,format=pyaudio.paInt16,input=True,frames_per_buffer=8192)
+    while listening:
+        stream.start_stream()
+        try :
+
+              data = stream.read(4096)
+              if recognizer.AcceptWaveform(data):
+                 result= recognizer.Result()
+                 response = result[14:-3]
+                 listening = False
+                 stream.close()
+                 return response
+        except OSError:
+         pass
+
+def analyze_command(command):
+    try:
+         if command == "takeoff":
+                 tello.takeoff()
+
+         elif command == "land":
+                tello.land()
+
+         elif command == "move_up":
+               tello.move_up(50)
+
+         elif command == "move_down":
+               tello.move_down(50)
+
+         elif command == "flip_right":
+                tello.flip_right()
+
+         else:
+               print('i do not understand')
+
+    except Exception:
+
+           pass
+
+while True:
+      print("waiting for command...")
+      command=get_command()
+      analyze_command(command)
